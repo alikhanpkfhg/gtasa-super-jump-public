@@ -1,0 +1,50 @@
+// ============================================================================
+//  gtasa.super_jump_test  -  diagnostic: proves the script runs and can jump
+// ----------------------------------------------------------------------------
+//  Tap the CENTRE of the screen (touch region 5) -> CJ jumps.
+//  Use this to test the pipeline: if this works, touch detection works and the
+//  main script only needs its region tuned; if this does nothing, the problem
+//  is CLEO installation / script loading, not the trigger.
+{$CLEO .csi}
+
+:JUMPTEST_INIT
+0006: 4@ = 0
+0001: wait 500 ms
+
+:JUMPTEST_MAIN
+0001: wait 0 ms
+0006: 2@ = 0
+00D6: if 0
+0DE0: 3@ = get_touch_point_state 5 mintime 0
+004D: jump_if_false @JUMPTEST_RELEASED
+0006: 0@ = 1
+0002: jump @JUMPTEST_EDGE
+
+:JUMPTEST_RELEASED
+0006: 0@ = 0
+
+:JUMPTEST_EDGE
+00D6: if 0
+0039:   0@ == 0
+004D: jump_if_false @JUMPTEST_PRESSED
+0006: 1@ = 0
+0002: jump @JUMPTEST_MAIN
+
+:JUMPTEST_PRESSED
+00D6: if 0
+0039:   1@ == 1
+004D: jump_if_false @JUMPTEST_DO
+0002: jump @JUMPTEST_MAIN
+
+:JUMPTEST_DO
+0006: 1@ = 1
+01F5: 2@ = get_player_actor 0
+00D6: if 0
+0039:   2@ == 0
+004D: jump_if_false @JUMPTEST_LAUNCH
+0002: jump @JUMPTEST_MAIN
+
+:JUMPTEST_LAUNCH
+05BC: AS_actor 2@ jump 1
+083C: set_actor 2@ velocity_in_direction_XYZ 0.0 0.0 18.0
+0002: jump @JUMPTEST_MAIN

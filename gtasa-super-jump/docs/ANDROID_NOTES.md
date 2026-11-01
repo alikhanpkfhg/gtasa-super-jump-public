@@ -127,3 +127,33 @@ Verified in the build environment:
    (region 9 = bottom-right cell), then check `cleo.log`.
 5. Tune `21@` (try 8.0 → 15.0) until the arc feels right, then re-test in a
    vehicle and during a mission to confirm it does not misfire.
+
+
+## 8. v2 change: why region detection is now the default (2026-11-01)
+
+The first release listened only to `00E1` (pad button 14). On the device the jump
+button did nothing. Diagnosis: `00E1` reads the game's *pad state*, and the
+Android on-screen HUD does not update that state on every SA Android build, so
+the check never became true. Meanwhile `0DE0` is implemented **inside CLEO
+Android itself** (`src/touch.cpp`), so it always works wherever the runtime is
+installed.
+
+v2 therefore uses, in order:
+
+1. `0DE0` on region **9** (bottom-right cell — where the jump button is drawn)
+2. `0DE0` on region **8** (right-centre cell — alternative HUD layouts)
+3. `00E1` on button **14**, then **16**, kept as extra triggers
+
+All four feed one press latch, a 20-frame cooldown, and the three-layer launch
+(`05BC` task, `083C` velocity 18.0 m/s, `00A0`/`00A1` +1.5 m lift). The idle
+timeout from v1 was removed: a menu-launched script that silently killed itself
+after ten idle minutes was one more way for the mod to look dead.
+
+A second file, `gtasa.super_jump_test.csi`, triggers on region **5** (centre) so
+the pipeline can be checked independently of the region choice: if a centre tap
+jumps, CLEO and `.csi` loading are fine and only `22@`/`23@` need tuning; if it
+does not, the problem is installation, not the trigger.
+
+Honest limits of v2: the region is a cell, not the button, so any touch in the
+bottom-right third of the screen fires a jump, and none of this has been run on
+hardware here.
