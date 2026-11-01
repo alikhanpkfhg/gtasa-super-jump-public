@@ -1,0 +1,110 @@
+// ============================================================================
+//  gtasa.super_jump  -  GTA San Andreas (Android) CLEO super jump
+// ----------------------------------------------------------------------------
+//  Target : GTA SA Mobile + CLEO Android 2.0.x
+//  Format : .csi  (menu-invoked script: starts ONLY when chosen in the in-game
+//           CLEO menu; slide top->bottom through the centre to open it)
+//  Build  : Sanny Builder 4.2.0, edit mode sa_mobile  (build.sh)
+//
+//  Trigger: opcode 00E1 "player 0 pressed_key <id>" with id 14 = SQUARE,
+//           which the SA control map defines as "Jump / Zoom In" on foot.
+//           On Android the on-screen jump button drives that same jump action
+//           bit, so this reads the REAL jump control - not a screen region.
+//           (0DE0 touch regions are the opt-in fallback below, see MODE.)
+// ============================================================================
+{$CLEO .csi}
+
+// ---------------------------- configuration --------------------------------
+// 20@  jump button id           14 = SQUARE = Jump / Zoom In  (00E1 button ids)
+// 21@  upward launch velocity   12.0 m/s  (vanilla jump is ~7 m/s)
+// 23@  trigger MODE              0 = jump action (00E1, recommended, default)
+//                                1 = touch region fallback (0DE0, opt-in only)
+// 24@  touch region for MODE 1   9 = RightBottom (1..9, 3x3 screen grid)
+// 22@  idle timeout in frames    36000 frames ~ 10 min at 60 fps, 0 = forever
+// ----------------------------------------------------------------------------
+:SUPERJUMP_INIT
+0006: 20@ = 14
+0007: 21@ = 12.0
+0006: 22@ = 36000
+0006: 23@ = 0
+0006: 24@ = 9
+0006: 1@ = 0
+0006: 3@ = 0
+0001: wait 500 ms
+
+// ------------------------------- main loop ---------------------------------
+:SUPERJUMP_MAIN
+0001: wait 0 ms
+0006: 0@ = 0
+
+// MODE 1: opt-in touch-region fallback (explicitly not the jump button)
+00D6: if 0
+0039:   23@ == 1
+004D: jump_if_false @SUPERJUMP_READ_KEY
+00D6: if 0
+0DE0: 2@ = get_touch_point_state 24@ mintime 0
+004D: jump_if_false @SUPERJUMP_RELEASED
+0006: 0@ = 1
+0002: jump @SUPERJUMP_CHECK
+
+// MODE 0 (default): the game's jump action bit
+:SUPERJUMP_READ_KEY
+00D6: if 0
+00E1:   player 0 pressed_key 20@
+004D: jump_if_false @SUPERJUMP_RELEASED
+0006: 0@ = 1
+0002: jump @SUPERJUMP_CHECK
+
+:SUPERJUMP_RELEASED
+0006: 0@ = 0
+
+// ------------------------ edge detection (press latch) ----------------------
+:SUPERJUMP_CHECK
+00D6: if 0
+0039:   0@ == 0
+004D: jump_if_false @SUPERJUMP_PRESSED
+
+// not pressed: arm the latch again and count idle frames
+0006: 1@ = 0
+000A: 3@ += 1
+0002: jump @SUPERJUMP_IDLE
+
+:SUPERJUMP_PRESSED
+0006: 3@ = 0
+
+// already handled this press? then do nothing until released
+00D6: if 0
+0039:   1@ == 1
+004D: jump_if_false @SUPERJUMP_DO
+0002: jump @SUPERJUMP_MAIN
+
+// --------------------------- the actual super jump --------------------------
+:SUPERJUMP_DO
+0006: 1@ = 1
+01F5: 2@ = get_player_actor 0
+
+// guard: no player actor this frame -> skip, never crash the thread
+00D6: if 0
+0039:   2@ == 0
+004D: jump_if_false @SUPERJUMP_LAUNCH
+0002: jump @SUPERJUMP_MAIN
+
+:SUPERJUMP_LAUNCH
+05BC: AS_actor 2@ jump 1
+083C: set_actor 2@ velocity_in_direction_XYZ 0.0 0.0 21@
+0002: jump @SUPERJUMP_MAIN
+
+// ----------------------------- idle timeout ---------------------------------
+:SUPERJUMP_IDLE
+00D6: if 0
+0039:   22@ == 0
+004D: jump_if_false @SUPERJUMP_HAVE_TIMEOUT
+0002: jump @SUPERJUMP_MAIN
+
+:SUPERJUMP_HAVE_TIMEOUT
+00D6: if 0
+002D:   3@ >= 22@
+004D: jump_if_false @SUPERJUMP_MAIN
+
+// clean termination: no jump input for ~10 minutes -> free the thread
+004E: terminate_this_script
