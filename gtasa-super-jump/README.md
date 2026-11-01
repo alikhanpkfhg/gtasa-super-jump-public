@@ -12,7 +12,9 @@ runs when *you* launch it.
 
 ## Install
 
-1. Copy `dist` decoded artifact to your device as
+The ready-to-use file is **`dist/gtasa.super_jump.csi`** (351 bytes).
+
+1. Copy `dist/gtasa.super_jump.csi` to your device as
    `/sdcard/cleo/sa/gtasa.super_jump.csi`
    (CLEO Android 2.0.x loads scripts from `%sdcard%/cleo/<game>`).
 2. In game, open the CLEO menu: **slide from the top of the screen to the bottom
@@ -21,7 +23,8 @@ runs when *you* launch it.
 4. Press the on-screen **jump** button. Each new press gives one boosted jump;
    holding it will not repeat.
 
-Decode the shipping artifact from this repo:
+`dist/gtasa.super_jump.csi.b64` is the same file base64-encoded, for tools that
+would rather not store a binary; `dist/decode.sh` restores it:
 
 ```bash
 bash dist/decode.sh          # writes gtasa.super_jump.csi + prints its SHA-256
