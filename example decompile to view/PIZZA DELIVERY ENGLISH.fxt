@@ -1,0 +1,22 @@
+DLVR Pizza Delivery
+DLVR1 ~y~pizza delivery
+DLVR0 Press TAP to Pizza Delivery mission on or off.
+SCPA Pizza Packet~y~ 5
+SCPB Pizza Packet~y~ 10
+SCPC Pizza Packet~y~ 15
+SCPD Pizza Packet~y~ 20
+SCPE Pizza Packet~y~ 25
+SCPF Pizza Packet~y~ 30
+PZACK Pizza Packet
+PZMNY Money~g~ $~1~
+NKMT ~s~Get in the ~b~bike~s~.
+BRIPS Give~y~ Pizza~w~ to him!
+GTOD1 Go to~y~ Pizza~w~ Place.
+GTOD2 ~y~Order~w~ Done!
+SAPK Select Package~b~ Pizza
+AUTH0 Mods By. ~y~DiezMod97
+PZMN Fare~g~ $~1~
+WHRP ~r~Where is the~y~ PIZZA~r~ PACKAGE?
+BUYDE ~r~Buyer is Dead!
+AAY1 ~r~YouTube~w~ Channel:~y~ DIEZMOD97
+AAY2 ~y~Like~w~ &~r~ Subscribe~w~ :)
