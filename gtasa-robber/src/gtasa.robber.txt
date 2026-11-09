@@ -1,0 +1,170 @@
+// ============================================================================
+//  gtasa.robber  -  GTA San Andreas (Android) CLEO robbery mod
+// ----------------------------------------------------------------------------
+//  Target : GTA SA Mobile + CLEO Android 2.0.x
+//  Format : .csi (menu-invoked; slide top->bottom through centre for CLEO menu)
+//
+//  Aim a gun at a pedestrian and press the trigger button: the ped throws his
+//  hands up, you take his cash, and he runs away.
+//
+//  Target detection uses 0457 "player <id> aiming_at_actor" - the game itself
+//  tells us which ped CJ is aiming at, so no screen regions or ped searches are
+//  needed for the robbery itself.
+//
+//  PROOF OF LIFE: when the script starts it adds $1 to your money. If that does
+//  not happen, the script is not running at all (installation problem).
+// ============================================================================
+{$CLEO .csi}
+
+// ------------------------------ configuration -------------------------------
+// 20@  key trigger A      14 = SQUARE "Jump / Zoom In"
+// 26@  key trigger B      16 = CROSS  "Sprint"
+// 27@  key trigger C      17 = CIRCLE "Attack"         (natural for a robbery)
+// 22@  touch region A      9 = RightBottom
+// 23@  touch region B      8 = RightCenter
+// 28@  touch region C      5 = Center (easy to test)
+// 21@  robbery payout      150
+// 25@  cooldown frames     45 (~0.75 s)
+// Set any region to 0 to disable it. Set 22@/23@/28@ all to 0 for keys only.
+// ----------------------------------------------------------------------------
+:ROBBER_INIT
+0006: 20@ = 14
+0006: 26@ = 16
+0006: 27@ = 17
+0006: 22@ = 9
+0006: 23@ = 8
+0006: 28@ = 5
+0006: 21@ = 150
+0006: 25@ = 45
+0006: 1@ = 0
+0006: 4@ = 0
+0001: wait 500 ms
+
+// proof of life: +$1 the moment the script runs
+0109: player 0 money += 1
+
+// -------------------------------- main loop ---------------------------------
+:ROBBER_MAIN
+0001: wait 0 ms
+0006: 0@ = 0
+
+// cooldown
+00D6: if 0
+0019:   4@ > 0
+004D: jump_if_false @ROBBER_INPUT
+000A: 4@ += -1
+0002: jump @ROBBER_MAIN
+
+// --- trigger 1: touch region A --------------------------------------------
+:ROBBER_INPUT
+00D6: if 0
+0039:   22@ == 0
+004D: jump_if_false @ROBBER_REG_A
+0002: jump @ROBBER_REG_B
+
+:ROBBER_REG_A
+00D6: if 0
+0DE0: 3@ = get_touch_point_state 22@ mintime 0
+004D: jump_if_false @ROBBER_REG_B
+0006: 0@ = 1
+0002: jump @ROBBER_CHECK_KEYS
+
+// --- trigger 2: touch region B --------------------------------------------
+:ROBBER_REG_B
+00D6: if 0
+0039:   23@ == 0
+004D: jump_if_false @ROBBER_REG_B_DO
+0002: jump @ROBBER_REG_C
+
+:ROBBER_REG_B_DO
+00D6: if 0
+0DE0: 3@ = get_touch_point_state 23@ mintime 0
+004D: jump_if_false @ROBBER_REG_C
+0006: 0@ = 1
+0002: jump @ROBBER_CHECK_KEYS
+
+// --- trigger 3: touch region C (centre) -----------------------------------
+:ROBBER_REG_C
+00D6: if 0
+0039:   28@ == 0
+004D: jump_if_false @ROBBER_REG_C_DO
+0002: jump @ROBBER_CHECK_KEYS
+
+:ROBBER_REG_C_DO
+00D6: if 0
+0DE0: 3@ = get_touch_point_state 28@ mintime 0
+004D: jump_if_false @ROBBER_CHECK_KEYS
+0006: 0@ = 1
+
+// --- trigger 4: key buttons ------------------------------------------------
+:ROBBER_CHECK_KEYS
+00D6: if 0
+0039:   0@ == 1
+004D: jump_if_false @ROBBER_KEY_A
+0002: jump @ROBBER_EDGE
+
+:ROBBER_KEY_A
+00D6: if 0
+00E1:   player 0 pressed_key 20@
+004D: jump_if_false @ROBBER_KEY_B
+0006: 0@ = 1
+0002: jump @ROBBER_EDGE
+
+:ROBBER_KEY_B
+00D6: if 0
+00E1:   player 0 pressed_key 26@
+004D: jump_if_false @ROBBER_KEY_C
+0006: 0@ = 1
+0002: jump @ROBBER_EDGE
+
+:ROBBER_KEY_C
+00D6: if 0
+00E1:   player 0 pressed_key 27@
+004D: jump_if_false @ROBBER_RELEASED
+0006: 0@ = 1
+
+// nothing pressed: re-arm
+:ROBBER_RELEASED
+00D6: if 0
+0039:   0@ == 1
+004D: jump_if_false @ROBBER_REARM
+0002: jump @ROBBER_EDGE
+
+:ROBBER_REARM
+0006: 1@ = 0
+0002: jump @ROBBER_MAIN
+
+// --- press latch -----------------------------------------------------------
+:ROBBER_EDGE
+00D6: if 0
+0039:   1@ == 1
+004D: jump_if_false @ROBBER_DO
+0002: jump @ROBBER_MAIN
+
+// ------------------------------- the robbery --------------------------------
+:ROBBER_DO
+0006: 1@ = 1
+0006: 4@ = 25
+
+// who is CJ aiming at? 0 = nobody
+00D6: if 0
+0457: 6@ = player 0 aiming_at_actor
+004D: jump_if_false @ROBBER_MAIN
+
+// no target -> nothing to rob
+00D6: if 0
+0039:   6@ == 0
+004D: jump_if_false @ROBBER_TAKE
+0002: jump @ROBBER_MAIN
+
+:ROBBER_TAKE
+01F5: 2@ = get_player_actor 0
+0209: 5@ = random_int_in_ranges 50 250
+
+// hand over the cash
+0109: player 0 money += 5@
+
+// the victim reacts: hands up, then runs off
+05C4: AS_actor 6@ hands_up 4000
+05DB: AS_actor 6@ flee_from_actor 2@ from_origin_radius 25 timelimit 9000
+0002: jump @ROBBER_MAIN

@@ -1,0 +1,16 @@
+// ============================================================================
+//  gtasa.robber_test  -  proof-of-life: proves CLEO runs this .csi and loops
+// ----------------------------------------------------------------------------
+//  On launch: +$1000. Then +$100 every 5 seconds.
+//  If your money does not change after launching it, no custom script is being
+//  loaded on your install - the problem is installation, not the mod.
+{$CLEO .csi}
+
+:RTEST_INIT
+0001: wait 500 ms
+0109: player 0 money += 1000
+
+:RTEST_LOOP
+0001: wait 5000 ms
+0109: player 0 money += 100
+0002: jump @RTEST_LOOP
